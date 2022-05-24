@@ -10,6 +10,8 @@ $self = Get-ADUser -Identity $cred.username -properties *
 $itHelpLink = '<a href = "mailto: ithelp@scprt.com">ithelp@scprt.com</a>'
 $HrDirectLink = '<a href = "mailto: HRDirect@scprt.com">HRDirect@scprt.com</a>'
 $parkOpLink = '<a href = "mailto: parkops@scprt.com">parkops@scprt.com</a>'
+$getcsv = $null
+$Users = $null
 $getcsv = (Get-ChildItem "C:\Scripts\Complete New Users\*.csv").FullName
 $Users = Import-Csv -Path $getcsv
 $skippedList = $null
@@ -141,6 +143,7 @@ foreach($User in $Users)
     }
 
     $wcOrParkString = "" + $userObj.name + " - " + $userObj.office
+    echo " "
     echo $wcOrParkString
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo "Type 1 for Park"
@@ -276,17 +279,16 @@ foreach($User in $Users)
     Set-ADuser -Identity $userIdentity -Credential $cred -ChangePasswordAtLogon $true
 }
     
-    #Creates a new path and puts used csv file into 'Sent New Users' Directory
-    $path = "C:\Scripts\Complete New Users\Sent New Users"
-    If(!(test-path $path)){New-Item -ItemType Directory -Force -Path $path}
-    Move-Item -Path $getcsv -Destination $path
+#Creates a new path and puts used csv file into 'Sent New Users' Directory
+$path = "C:\Scripts\Complete New Users\Sent New Users"
+If(!(test-path $path)){New-Item -ItemType Directory -Force -Path $path}
+Move-Item -Path $getcsv -Destination $path
 
-    echo " "
-    echo " "
-    echo "SKIPPED: "
-    echo "~~~~~~~~~"
-    for($i = 0; $i -le ($skippedList.count - 1); $i++){
-        $string = '' + ($i + 1)+ '. ' + $skippedList[$i]
-        echo $string
-    }
-
+echo " "
+echo " "
+echo "SKIPPED: "
+echo "~~~~~~~~~"
+for($i = 0; $i -le ($skippedList.count - 1); $i++){
+    $string = '' + ($i + 1)+ '. ' + $skippedList[$i]
+    echo $string
+}
