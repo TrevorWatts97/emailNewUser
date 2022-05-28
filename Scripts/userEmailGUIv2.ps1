@@ -13,10 +13,17 @@ $HrDirectLink = '<a href = "mailto: HRDirect@scprt.com">HRDirect@scprt.com</a>'
 $parkOpLink = '<a href = "mailto: parkops@scprt.com">parkops@scprt.com</a>'
 $getcsv = $null
 $Users = $null
-$getcsv = (Get-ChildItem "C:\Scripts\Complete* New Users\*.csv").FullName
-$Users = Import-Csv -Path $getcsv
 $skippedList = $null
 $skippedList = [System.Collections.Generic.List[string]]::new()
+
+#Attempting to get CSV pulled - Some script runners use the folder 'Completed new users' hence the *
+try{
+    $getcsv = (Get-ChildItem "C:\Scripts\Complete* New Users\*.csv").FullName
+    $Users = Import-Csv -Path $getcsv
+}catch{
+    [void] [System.Windows.MessageBox]::Show( "No CSV file is in the 'Complete new users' folder", "No CSV file", "OK", "Warning" )
+    exit
+}
 
 
 
@@ -33,13 +40,11 @@ foreach($User in $Users)
     $userSupervisor = $null
     $userManager = $null
     $sendToEmail = $null
-    $tempEmail = $null
     $emailList = $null
-    $wcOrParkString = $null
     $emailList = [System.Collections.Generic.List[string]]::new()
 
 
-    #Getting needed info from csv and active directory
+    #Getting needed info from csv and active directory and setting it up
     if($User."Network Logon?" -eq "No"){continue}
     $firstName = $User."First Name" -replace '[^a-zA-Z]', ''
     $lastName = $user."Last Name" -replace ' jr$| JR$| sr$| SR$| ii$| ii $| II$| II $| iii$| iii $| III$| III $| iv$| iv $| IV$| IV $|,jr$|, jr$|,JR$|, JR$|,sr$|, sr$|,SR$|, SR$|, jr $|,jr $|, JR $|,JR $|,sr $|,SR $|, sr $|, SR $|,ii$|, ii$|,II$|, II$|,ii $|,II $|, ii $|, II $|,iii$|,III$|, iii$|, III$|,iii $|,III $|, iii $|, III $|,iv$|,IV$|, iv$|, IV$|, iv $|, IV $'
@@ -54,6 +59,11 @@ foreach($User in $Users)
     $userSupervisor = Get-ADUser -Identity $userObj.Manager -properties *
     $emailList.Add($userSupervisor.mail)
 
+
+    <#Finding supervisor, assistant manager, and manager
+     Obvious Logic issues here with how the business is ran and how the AD is not updated
+     However, Using a list view for the emails it pulls allows the script runner to fix AD as problems arise
+     #>
     #Supervisor is manager
     if($userSupervisor.description -like "*Manager*" -and $userSupervisor.description -notlike "*ass*"){
         Foreach($employee in $userSupervisor.directReports){
@@ -80,13 +90,19 @@ foreach($User in $Users)
         }
     }
 
+
     #Main Form
     $main_form = New-Object System.Windows.Forms.Form
     $main_form.Text ='New User Email Script'
     $main_form.Width = 500
     $main_form.Height = 400
     $main_form.AutoSize = $true
-    $main_form.Icon = "C:\Scripts\user.ico"
+    $main_form.Icon = "C:\Scripts\Attachments\user.ico"
+    $CenterScreen = [System.Windows.Forms.FormStartPosition]::CenterScreen
+    $main_form.StartPosition = $CenterScreen
+    $main_form.WindowState = "Normal"
+    $main_form.TopMost = $true 
+    
 
     #User's Name label
     $lblUser = New-Object System.Windows.Forms.Label
@@ -120,9 +136,9 @@ foreach($User in $Users)
     $main_form.Controls.Add($ListBox)
 
 
-    #Button to delete email from combobox
+    #Button to delete email from listbox
     $BtnDelete = New-Object System.Windows.Forms.Button
-    $BtnDelete.Location = New-Object System.Drawing.Size(350,60)
+    $BtnDelete.Location = New-Object System.Drawing.Size(330,60)
     $BtnDelete.Size = New-Object System.Drawing.Size(120,23)
     $BtnDelete.Text = "Delete"
     $main_form.Controls.Add($BtnDelete)
@@ -137,16 +153,16 @@ foreach($User in $Users)
 
     })
 
-    #Textbox to add new email
+    #Textbox to add new email to listbox
     $textBox = New-Object System.Windows.Forms.TextBox
     $textBox.Width = 290
     $textBox.Font = New-Object System.Drawing.Font("Tahoma",10,[System.Drawing.FontStyle]::Regular)
-    $textBox.Location  = New-Object System.Drawing.Point(10,160)
+    $textBox.Location  = New-Object System.Drawing.Point(10,150)
     $main_form.Controls.Add($textBox)
 
     #button to confirm added email in textbox
     $BtnAdd = New-Object System.Windows.Forms.Button
-    $BtnAdd.Location = New-Object System.Drawing.Size(350,160)
+    $BtnAdd.Location = New-Object System.Drawing.Size(330,150)
     $BtnAdd.Size = New-Object System.Drawing.Size(120,23)
     $BtnAdd.Text = "Add"
     $main_form.Controls.Add($BtnAdd)
@@ -165,30 +181,53 @@ foreach($User in $Users)
     })
 
     #GroupBox for radio buttons
-    $groupBox = New-Object System.Windows.Forms.GroupBox 
-    $groupBox.Location = New-Object System.Drawing.Size(10,180) 
-    $groupBox.size = New-Object System.Drawing.Size(290,50) 
-    $main_form.Controls.Add($groupBox) 
+    $groupBoxOrg = New-Object System.Windows.Forms.GroupBox 
+    $groupBoxOrg.Location = New-Object System.Drawing.Size(10,180) 
+    $groupBoxOrg.size = New-Object System.Drawing.Size(290,50) 
+    $main_form.Controls.Add($groupBoxOrg) 
     
-    #Radio button for Parks
-    $rbParks = New-Object System.Windows.Forms.RadioButton 
-    $rbParks.Location = new-object System.Drawing.Point(35,15) 
-    $rbParks.size = New-Object System.Drawing.Size(70,20) 
-    $rbParks.Checked = $true 
-    $rbParks.Text = "Parks" 
-    $groupBox.Controls.Add($rbParks) 
+        #Radio button for Parks
+        $rbParks = New-Object System.Windows.Forms.RadioButton 
+        $rbParks.Location = new-object System.Drawing.Point(35,15) 
+        $rbParks.size = New-Object System.Drawing.Size(70,20) 
+        $rbParks.Checked = $true 
+        $rbParks.Text = "Parks" 
+        $groupBoxOrg.Controls.Add($rbParks) 
 
-    #Radio button for Welcome centers
-    $rbWelcomCenter = New-Object System.Windows.Forms.RadioButton 
-    $rbWelcomCenter.Location = new-object System.Drawing.Point(135,15) 
-    $rbWelcomCenter.size = New-Object System.Drawing.Size(150,20) 
-    $rbWelcomCenter.Checked = $false 
-    $rbWelcomCenter.Text = "Welcome Center" 
-    $groupBox.Controls.Add($rbWelcomCenter) 
+        #Radio button for Welcome centers
+        $rbWelcomCenter = New-Object System.Windows.Forms.RadioButton 
+        $rbWelcomCenter.Location = new-object System.Drawing.Point(135,15) 
+        $rbWelcomCenter.size = New-Object System.Drawing.Size(150,20) 
+        $rbWelcomCenter.Checked = $false 
+        $rbWelcomCenter.Text = "Welcome Center" 
+        $groupBoxOrg.Controls.Add($rbWelcomCenter) 
+
+    #GroupBox for radio buttons
+    $groupBoxReset = New-Object System.Windows.Forms.GroupBox 
+    $groupBoxReset.Location = New-Object System.Drawing.Size(10,235) 
+    $groupBoxReset.size = New-Object System.Drawing.Size(290,50)
+    $groupBoxReset.Text = "Reset Password?"
+    $main_form.Controls.Add($groupBoxReset) 
+    
+        #Radio button to reset password
+        $rbResetPwd = New-Object System.Windows.Forms.RadioButton 
+        $rbResetPwd.Location = new-object System.Drawing.Point(35,20) 
+        $rbResetPwd.size = New-Object System.Drawing.Size(70,20) 
+        $rbResetPwd.Checked = $true 
+        $rbResetPwd.Text = "Yes" 
+        $groupBoxReset.Controls.Add($rbResetPwd) 
+
+        #Radio button to not reset password
+        $rbNoReset = New-Object System.Windows.Forms.RadioButton 
+        $rbNoReset.Location = new-object System.Drawing.Point(135,20) 
+        $rbNoReset.size = New-Object System.Drawing.Size(150,20) 
+        $rbNoReset.Checked = $false 
+        $rbNoReset.Text = "No" 
+        $groupBoxReset.Controls.Add($rbNoReset)
 
     #Button to send email
     $BtnSend = New-Object System.Windows.Forms.Button
-    $BtnSend.Location = New-Object System.Drawing.Size(10,250)
+    $BtnSend.Location = New-Object System.Drawing.Size(10,300)
     $BtnSend.Size = New-Object System.Drawing.Size(120,23)
     $BtnSend.Text = "Send Email"
     $main_form.Controls.Add($BtnSend)
@@ -196,6 +235,9 @@ foreach($User in $Users)
     {
         $answer = [System.Windows.MessageBox]::Show( "Are you sure you would like to send?", "Send Email", "YesNoCancel", "Warning" )
         if($answer -eq "Yes"){
+            foreach($email in $ListBox.Items){
+                $sendToEmail += $email + ";"
+            }
             if ($rbParks.Checked -eq $true) {
             try{
                 #Attaching the three pdf files to the email
@@ -323,7 +365,7 @@ foreach($User in $Users)
 
     #Button to skip user
     $BtnSkip = New-Object System.Windows.Forms.Button
-    $BtnSkip.Location = New-Object System.Drawing.Size(180,250)
+    $BtnSkip.Location = New-Object System.Drawing.Size(180,300)
     $BtnSkip.Size = New-Object System.Drawing.Size(120,23)
     $BtnSkip.Text = "Skip user"
     $main_form.Controls.Add($BtnSkip)
@@ -331,21 +373,22 @@ foreach($User in $Users)
     {
         $answer = [System.Windows.MessageBox]::Show( "Are you sure you would like to skip this user?", "Skip User", "YesNoCancel", "Warning" )
         if($answer -eq "Yes"){
-            $skippedList.Add($userObj.name)
+            $skippedList.Add($Name)
             $main_form.Close()
         }
 
     })
-
     $main_form.ShowDialog()
-
-    try{
-    #Sets password for new user
-    Set-ADAccountPassword -Identity $userIdentity -Credential $cred -Reset -NewPassword (ConvertTo-SecureString -AsPlainText $userPassword -Force)
-    Set-ADuser -Identity $userIdentity -Credential $cred -ChangePasswordAtLogon $true
-    }
-    catch{
-        [void] [System.Windows.MessageBox]::Show( "Unable to reset password", "Password Reset Error", "OK", "Warning" )
+    
+    if ($rbResetPwd.Checked -eq $true) {
+        try{
+            #Sets password for new user
+            Set-ADAccountPassword -Identity $userIdentity -Credential $cred -Reset -NewPassword (ConvertTo-SecureString -AsPlainText $userPassword -Force)
+            Set-ADuser -Identity $userIdentity -Credential $cred -ChangePasswordAtLogon $true
+            }
+        catch{
+            [void] [System.Windows.MessageBox]::Show( "Unable to reset password", "Password Reset Error", "OK", "Warning" )
+        }
     }
     $main_form.Close()
 }
@@ -364,10 +407,12 @@ try{
 #Skipped users form
 $skipped_form = New-Object System.Windows.Forms.Form
 $skipped_form.Text ='Skipped Users'
-$skipped_form.Width = 300
+$skipped_form.Width = 400
 $skipped_form.Height = 300
 $skipped_form.AutoSize = $true
-$skipped_form.Icon = "C:\Scripts\user.ico"
+$skipped_form.Icon = "C:\Scripts\Attachments\user.ico"
+$CenterScreen = [System.Windows.Forms.FormStartPosition]::CenterScreen
+$skipped_form.StartPosition = $CenterScreen
 
 #User's Name label
 $lblUser = New-Object System.Windows.Forms.Label
@@ -393,15 +438,31 @@ $lblLine.AutoSize = $true
 $skipped_form.Controls.Add($lblLine)
 
 #ListBox For Emails
-$ListBox = New-Object System.Windows.Forms.ListBox
-$ListBox.Width = 290
-$listBox.Height = 400
-$ListBox.Font = New-Object System.Drawing.Font("Tahoma",10,[System.Drawing.FontStyle]::Regular)
+$lbSkipped = New-Object System.Windows.Forms.ListBox
+$lbSkipped.Width = 250
+$lbSkipped.Height = 400
+$lbSkipped.Font = New-Object System.Drawing.Font("Tahoma",10,[System.Drawing.FontStyle]::Regular)
 $Users = get-aduser -filter * -Properties SamAccountName
 foreach($person in $skippedList){
-    $ListBox.Items.Add($person)    
+    $lbSkipped.Items.Add($person)    
 }
-$ListBox.Location  = New-Object System.Drawing.Point(10,80)
-$skipped_form.Controls.Add($ListBox)
+$lbSkipped.Location  = New-Object System.Drawing.Point(10,80)
+$skipped_form.Controls.Add($lbSkipped)
+
+#Button for sent email
+$btnSent = New-Object System.Windows.Forms.Button
+$btnSent.Location = New-Object System.Drawing.Size(270,80)
+$btnSent.Size = New-Object System.Drawing.Size(100,23)
+$btnSent.Text = "Sent Email"
+$skipped_form.Controls.Add($btnSent)
+$btnSent.Add_Click(
+{
+    $answer = [System.Windows.MessageBox]::Show( "Did you send the email to " + $lbSkipped.SelectedItem.ToString(), " Sent email Confirmation", "YesNoCancel", "Warning" )
+        if($answer -eq "Yes"){
+            $lbSkipped.Items.Remove($lbSkipped.SelectedItem)
+            $lbSkipped.Text = ""
+        }
+})
+$skipped_form.Controls.Add($btnSent)
 
 $skipped_form.ShowDialog()
