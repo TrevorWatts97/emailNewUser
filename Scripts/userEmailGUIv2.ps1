@@ -18,10 +18,10 @@ $skippedList = [System.Collections.Generic.List[string]]::new()
 
 #Attempting to get CSV pulled - Some script runners use the folder 'Completed new users' hence the *
 try{
-    $getcsv = (Get-ChildItem "C:\Scripts\Complete* New Users\*.csv").FullName
+    $getcsv = (Get-ChildItem "C:\Scripts\Logininfo\newLoginInfo.csv").FullName
     $Users = Import-Csv -Path $getcsv
 }catch{
-    [void] [System.Windows.MessageBox]::Show( "No CSV file is in the 'Complete new users' folder", "No CSV file", "OK", "Warning" )
+    [void] [System.Windows.MessageBox]::Show( "No CSV file is in the 'LoginInfo' folder", "No CSV file", "OK", "Warning" )
     exit
 }
 
@@ -29,6 +29,7 @@ try{
 
 foreach($User in $Users)
 {   
+    if($User."SentEmail" -eq "Yes"){continue}
     #Resetting all variables so no left over information gets sent to the wrong person
     $Name = $null
     $lastName = $null
@@ -45,15 +46,10 @@ foreach($User in $Users)
 
 
     #Getting needed info from csv and active directory and setting it up
-    if($User."Network Logon?" -eq "No"){continue}
-    $firstName = $User."First Name" -replace '[^a-zA-Z]', ''
-    $lastName = $user."Last Name" -replace ' jr$| JR$| sr$| SR$| ii$| ii $| II$| II $| iii$| iii $| III$| III $| iv$| iv $| IV$| IV $|,jr$|, jr$|,JR$|, JR$|,sr$|, sr$|,SR$|, SR$|, jr $|,jr $|, JR $|,JR $|,sr $|,SR $|, sr $|, SR $|,ii$|, ii$|,II$|, II$|,ii $|,II $|, ii $|, II $|,iii$|,III$|, iii$|, III$|,iii $|,III $|, iii $|, III $|,iv$|,IV$|, iv$|, IV$|, iv $|, IV $'
-    $lastName = $lastName -replace '[^a-zA-Z]', ''
-    $Name = $firstName + "* *" + $lastName
-    $userObj = get-aduser -Filter {Name -like $Name} -properties *
+    $SAM = $User."SAM"
+    $userObj = get-aduser -Identity $SAM -properties *
     $Name = $userObj.name
     $firstName = $userObj.GivenName
-    $userIdentity = $userObj.SamAccountName
     $userEmailLink = '<a href = "mailto: '+$userObj.mail+'">'+$userObj.mail+'</a>'
     $userPassword = "SCPRT!0" + (Get-Date).Millisecond
     $userSupervisor = Get-ADUser -Identity $userObj.Manager -properties *
@@ -106,7 +102,7 @@ foreach($User in $Users)
 
     #User's Name label
     $lblUser = New-Object System.Windows.Forms.Label
-    $lblUser.Text = $Name
+    $lblUser.Text = '' + $Name + " - " + $userObj.Office
     $lblUser.Font = New-Object System.Drawing.Font("Tahoma",10,[System.Drawing.FontStyle]::Regular)
     $lblUser.Location  = New-Object System.Drawing.Point(10,10)
     $lblUser.AutoSize = $true
@@ -114,7 +110,7 @@ foreach($User in $Users)
 
     #Squiggle Line Label
     $lblLine = New-Object System.Windows.Forms.Label
-    $lblLine.Text = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    $lblLine.Text = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     $lblLine.Location  = New-Object System.Drawing.Point(10,35)
     $lblLine.AutoSize = $true
     $main_form.Controls.Add($lblLine)
@@ -123,7 +119,6 @@ foreach($User in $Users)
     $ListBox = New-Object System.Windows.Forms.ListBox
     $ListBox.Width = 290
     $ListBox.Font = New-Object System.Drawing.Font("Tahoma",10,[System.Drawing.FontStyle]::Regular)
-    $Users = get-aduser -filter * -Properties SamAccountName
     foreach($email in $emailList){
         if($email -ne ""){
             $ListBox.Items.Add($email)    
@@ -147,8 +142,8 @@ foreach($User in $Users)
     {
         $answer = [System.Windows.MessageBox]::Show( "Do you want to remove this user?", " Removal Confirmation", "YesNoCancel", "Warning" )
         if($answer -eq "Yes"){
+            $emailList.RemoveAt($ListBox.SelectedIndex)
             $ListBox.Items.Remove($ListBox.SelectedItem)
-            $ListBox.Text = ""
         }
 
     })
@@ -173,6 +168,7 @@ foreach($User in $Users)
             [void] [System.Windows.MessageBox]::Show( "Make sure to put text in the textbox before clicking add", "No text in textbox", "OK", "Warning" )
         }
         else {#if($answer -eq $dialogresult.Yes){
+            $emailList.Add($textbox.Text)
             $ListBox.Items.Add($textbox.Text)
             $ListBox.Text = $textbox.Text
             $textbox.Text = ""
@@ -294,6 +290,7 @@ foreach($User in $Users)
                 $Mail.Send()
                 $Outlook.Quit() 
                 [System.Runtime.Interopservices.Marshal]::ReleaseComObject($Outlook) | Out-Null
+                $User."SentEmail" = "Yes"
                 [void] [System.Windows.MessageBox]::Show( "Email Sent Successful", "Success", "OK", "Information" )
             }
             catch{
@@ -355,6 +352,7 @@ foreach($User in $Users)
                 $Mail.Send()
                 $Outlook.Quit() 
                 [System.Runtime.Interopservices.Marshal]::ReleaseComObject($Outlook) | Out-Null
+                $User."SentEmail" = "Yes"
                 [void] [System.Windows.MessageBox]::Show( "Email Sent Successful", "Success", "OK", "Information" )
             }catch{
                 [void] [System.Windows.MessageBox]::Show( "Unable to send email properly", "Email Error", "OK", "Warning" )
@@ -371,7 +369,7 @@ foreach($User in $Users)
     $main_form.Controls.Add($BtnSkip)
     $BtnSkip.Add_Click(
     {
-        $answer = [System.Windows.MessageBox]::Show( "Are you sure you would like to skip this user?", "Skip User", "YesNoCancel", "Warning" )
+        $answer = [System.Windows.MessageBox]::Show( "Are you sure you want to skip $Name ?", "Skip User", "YesNoCancel", "Warning" )
         if($answer -eq "Yes"){
             $skippedList.Add($Name)
             $main_form.Close()
@@ -383,8 +381,8 @@ foreach($User in $Users)
     if ($rbResetPwd.Checked -eq $true) {
         try{
             #Sets password for new user
-            Set-ADAccountPassword -Identity $userIdentity -Credential $cred -Reset -NewPassword (ConvertTo-SecureString -AsPlainText $userPassword -Force)
-            Set-ADuser -Identity $userIdentity -Credential $cred -ChangePasswordAtLogon $true
+            Set-ADAccountPassword -Identity $SAM -Credential $cred -Reset -NewPassword (ConvertTo-SecureString -AsPlainText $userPassword -Force)
+            Set-ADuser -Identity $SAM -Credential $cred -ChangePasswordAtLogon $true
             }
         catch{
             [void] [System.Windows.MessageBox]::Show( "Unable to reset password", "Password Reset Error", "OK", "Warning" )
@@ -414,6 +412,7 @@ $skipped_form.Icon = "C:\Scripts\Attachments\user.ico"
 $CenterScreen = [System.Windows.Forms.FormStartPosition]::CenterScreen
 $skipped_form.StartPosition = $CenterScreen
 
+
 #User's Name label
 $lblUser = New-Object System.Windows.Forms.Label
 $lblUser.Text = "Skipped Users"
@@ -442,10 +441,10 @@ $lbSkipped = New-Object System.Windows.Forms.ListBox
 $lbSkipped.Width = 250
 $lbSkipped.Height = 400
 $lbSkipped.Font = New-Object System.Drawing.Font("Tahoma",10,[System.Drawing.FontStyle]::Regular)
-$Users = get-aduser -filter * -Properties SamAccountName
 foreach($person in $skippedList){
     $lbSkipped.Items.Add($person)    
 }
+if($lbSkipped.Items.Count -eq 0){$skipped_form.Close()}
 $lbSkipped.Location  = New-Object System.Drawing.Point(10,80)
 $skipped_form.Controls.Add($lbSkipped)
 
@@ -459,8 +458,11 @@ $btnSent.Add_Click(
 {
     $answer = [System.Windows.MessageBox]::Show( "Did you send the email to " + $lbSkipped.SelectedItem.ToString(), " Sent email Confirmation", "YesNoCancel", "Warning" )
         if($answer -eq "Yes"){
+            $Users | foreach{if($_.FullName -eq $lbSkipped.SelectedItem.ToString()){$_.SentEmail = "Yes"}}
+            $Users | Export-Csv 'C:\Scripts\Logininfo\newLoginInfo.csv' -NoTypeInformation
             $lbSkipped.Items.Remove($lbSkipped.SelectedItem)
             $lbSkipped.Text = ""
+            if($lbSkipped.Items.Count -eq 0){$skipped_form.Close()}
         }
 })
 $skipped_form.Controls.Add($btnSent)
