@@ -18,7 +18,7 @@ $skippedList = [System.Collections.Generic.List[string]]::new()
 
 #Attempting to get CSV pulled - Some script runners use the folder 'Completed new users' hence the *
 try{
-    $getcsv = (Get-ChildItem "C:\Scripts\Logininfo\newLoginInfo.csv").FullName
+    $getcsv = (Get-ChildItem "C:\Scripts\Logininfo\LoginInfo.csv").FullName
     $Users = Import-Csv -Path $getcsv
 }catch{
     [void] [System.Windows.MessageBox]::Show( "No CSV file in the 'LoginInfo' folder", "No CSV file", "OK", "Warning" )
@@ -392,15 +392,10 @@ foreach($User in $Users)
     }
     $main_form.Close()
 }
-    
-try{
-    #Creates a new path and puts used csv file into 'Sent New Users' Directory
-    $path = "C:\Scripts\Complete* New Users\Sent New Users"
-    If(!(test-path $path)){New-Item -ItemType Directory -Force -Path $path}
-    Move-Item -Path $getcsv -Destination $path
-}catch{
-    [void] [System.Windows.MessageBox]::Show( "Unable to move csv file. Make sure to close it next time. Please Manually move it into the 'Sent New Users' Folder", "Moving CSV Error", "OK", "Warning" )
-}
+
+
+
+
 
 #SKIPPED USERS FORM
 
@@ -461,7 +456,7 @@ $btnSent.Add_Click(
     $answer = [System.Windows.MessageBox]::Show( "Did you send the email to " + $lbSkipped.SelectedItem.ToString(), " Sent email Confirmation", "YesNoCancel", "Warning" )
         if($answer -eq "Yes"){
             $Users | foreach{if($_.FullName -eq $lbSkipped.SelectedItem.ToString()){$_.SentEmail = "Yes"}}
-            $Users | Export-Csv 'C:\Scripts\Logininfo\newLoginInfo.csv' -NoTypeInformation
+            $Users | Export-Csv 'C:\Scripts\Logininfo\LoginInfo.csv' -NoTypeInformation
             $lbSkipped.Items.Remove($lbSkipped.SelectedItem)
             $lbSkipped.Text = ""
             if($lbSkipped.Items.Count -eq 0){$skipped_form.Close()}
