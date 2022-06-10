@@ -1,6 +1,6 @@
 # New Active Directory User
 This script has been created by a former colleague and myself. 
-There are two scripts 
+There are two scripts.
 Please read through this before attempting run. Thank you.
 
 Set up:
