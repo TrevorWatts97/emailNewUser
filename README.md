@@ -26,11 +26,13 @@ CSV ACCOUNT CREATION Instructions:
 
 - Check AD to see if the user accounts were created. Verify their settings match with the intended settings from the .CSV file.
   - Member of tab: "Domain Users," as well as "Parks-FIELD" (if in a park) and the actual park group
-  - General tab: 
-  - Profile tab: 
-  - Organization tab: 
+  - General tab: Name, Description, Office, Phone Number, Email 
+  - Profile tab: Logon script "logon.bat"
+  - Organization tab: Job Title, Department code, Company SCPRT, Manager Name
 
-PLEASE NOTE: in one instance the manager's user ID was entered and it caused an error, resulting in no new user creation
+PLEASE NOTE: 
+-------------
+  - In one instance the manager's user ID was entered and it caused an error, resulting in no new user creation
   - I checked and the manager's user ID was listed as one thing under "User logon name" and another under "E-mail" and "User logon name (pre-windows 2000)"
   - the correct one was either the ID listed in the email or the one in the pre-Win2k logon name, NOT the User logon name
   - not sure where this discrepancy happened but this is a worthwhile note for which version the script is checking against
