@@ -323,7 +323,7 @@ If ($NetworkLogon -eq 'Yes'){
         Supervisor = $ManagerName
         Location = $Office
         SentEmail = "No"
-    } | Export-Csv -append -Path 'C:\Scripts\Logininfo\newLoginInfo.csv' -NoTypeInformation}
+    } | Export-Csv -append -Path 'C:\Scripts\Logininfo\LoginInfo.csv' -NoTypeInformation}
 }
 
 Move-Item -Path $getcsv -Destination 'C:\Scripts\Complete New Users'

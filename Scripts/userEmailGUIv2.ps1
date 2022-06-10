@@ -21,7 +21,7 @@ try{
     $getcsv = (Get-ChildItem "C:\Scripts\Logininfo\newLoginInfo.csv").FullName
     $Users = Import-Csv -Path $getcsv
 }catch{
-    [void] [System.Windows.MessageBox]::Show( "No CSV file is in the 'LoginInfo' folder", "No CSV file", "OK", "Warning" )
+    [void] [System.Windows.MessageBox]::Show( "No CSV file in the 'LoginInfo' folder", "No CSV file", "OK", "Warning" )
     exit
 }
 
@@ -291,7 +291,8 @@ foreach($User in $Users)
                 $Outlook.Quit() 
                 [System.Runtime.Interopservices.Marshal]::ReleaseComObject($Outlook) | Out-Null
                 $User."SentEmail" = "Yes"
-                [void] [System.Windows.MessageBox]::Show( "Email Sent Successful", "Success", "OK", "Information" )
+                [void] [System.Windows.MessageBox]::Show( "Email Sent Successful, Please wait 10 seconds to send", "Success", "OK", "Information" )
+                $main_form.Close()
             }
             catch{
                 [void] [System.Windows.MessageBox]::Show( "Unable to send email properly", "Email Error", "OK", "Warning" )
@@ -353,7 +354,8 @@ foreach($User in $Users)
                 $Outlook.Quit() 
                 [System.Runtime.Interopservices.Marshal]::ReleaseComObject($Outlook) | Out-Null
                 $User."SentEmail" = "Yes"
-                [void] [System.Windows.MessageBox]::Show( "Email Sent Successful", "Success", "OK", "Information" )
+                [void] [System.Windows.MessageBox]::Show( "Email Sent Successful, Please wait 10 seconds to send", "Success", "OK", "Information" )
+                $main_form.Close()
             }catch{
                 [void] [System.Windows.MessageBox]::Show( "Unable to send email properly", "Email Error", "OK", "Warning" )
             }}
