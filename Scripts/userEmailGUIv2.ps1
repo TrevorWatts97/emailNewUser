@@ -29,7 +29,7 @@ try{
 
 foreach($User in $Users)
 {   
-    if($User."SentEmail" -eq "Yes"){continue}
+    if($User."SentEmail" -ne "No"){continue}
     #Resetting all variables so no left over information gets sent to the wrong person
     $Name = $null
     $lastName = $null
@@ -392,10 +392,6 @@ foreach($User in $Users)
     }
     $main_form.Close()
 }
-
-
-
-
 
 #SKIPPED USERS FORM
 
