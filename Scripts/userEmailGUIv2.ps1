@@ -51,7 +51,7 @@ foreach($User in $Users)
     $Name = $userObj.name
     $firstName = $userObj.GivenName
     $userEmailLink = '<a href = "mailto: '+$userObj.mail+'">'+$userObj.mail+'</a>'
-    $userPassword = "SCPRT!0" + (Get-Date).Millisecond
+    $userPassword = $User."Password"
     $userSupervisor = Get-ADUser -Identity $userObj.Manager -properties *
     $emailList.Add($userSupervisor.mail)
 
@@ -373,6 +373,7 @@ foreach($User in $Users)
     {
         $answer = [System.Windows.MessageBox]::Show( "Are you sure you want to skip $Name ?", "Skip User", "YesNoCancel", "Warning" )
         if($answer -eq "Yes"){
+            $User."SentEmail" = "Yes"
             $skippedList.Add($Name)
             $main_form.Close()
         }
@@ -392,6 +393,7 @@ foreach($User in $Users)
     }
     $main_form.Close()
 }
+$Users | Export-Csv 'C:\Scripts\Logininfo\LoginInfo.csv' -NoTypeInformation
 
 #SKIPPED USERS FORM
 
@@ -452,7 +454,6 @@ $btnSent.Add_Click(
     $answer = [System.Windows.MessageBox]::Show( "Did you send the email to " + $lbSkipped.SelectedItem.ToString(), " Sent email Confirmation", "YesNoCancel", "Warning" )
         if($answer -eq "Yes"){
             $Users | foreach{if($_.FullName -eq $lbSkipped.SelectedItem.ToString()){$_.SentEmail = "Yes"}}
-            $Users | Export-Csv 'C:\Scripts\Logininfo\LoginInfo.csv' -NoTypeInformation
             $lbSkipped.Items.Remove($lbSkipped.SelectedItem)
             $lbSkipped.Text = ""
             if($lbSkipped.Items.Count -eq 0){$skipped_form.Close()}
