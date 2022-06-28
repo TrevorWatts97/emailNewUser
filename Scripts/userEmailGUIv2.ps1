@@ -61,7 +61,7 @@ foreach($User in $Users)
      However, Using a list view for the emails it pulls allows the script runner to fix AD as problems arise
      #>
     #Supervisor is manager
-    if($userSupervisor.description -like "*Manager*" -and $userSupervisor.description -notlike "*ass*"){
+    if($userSupervisor.description -like "*Manager*" -and $userSupervisor.description -notlike "*ass*" -and $userSupervisor.description -notlike "*Retail*"){
         Foreach($employee in $userSupervisor.directReports){
             $thisEmployee = Get-ADUser -Identity $employee -properties *
             #Manager has assistant manager
