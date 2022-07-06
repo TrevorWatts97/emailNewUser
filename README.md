@@ -67,3 +67,4 @@ PLEASE NOTE:
 - The close button (Top right X) Will not work as intended. If you would like to close out of the program, open the ise and click the stop button (red square) at the top. Check the do not reset password radio button and then press the x button at the top right. Note: This will still reset password if that option is checked.
 - You may get multiple errors if you do not have access to reset users passwords or if you have any outdated outlook client installed on your machine
 - This script relies on the previous scripts LoginInfo.csv file. Before you run the script, make sure only the users you want to send an email about have the 'SentEmail' status set to 'No'
+- Any user you skip who still has the 'reset password' button checked will have their 'SentEmail' status changed to 'Yes'
