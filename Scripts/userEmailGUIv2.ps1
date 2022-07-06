@@ -373,7 +373,7 @@ foreach($User in $Users)
     {
         $answer = [System.Windows.MessageBox]::Show( "Are you sure you want to skip $Name ?", "Skip User", "YesNoCancel", "Warning" )
         if($answer -eq "Yes"){
-            $User."SentEmail" = "Yes"
+            if ($rbResetPwd.Checked -eq $true) {$User."SentEmail" = "Yes"}
             $skippedList.Add($Name)
             $main_form.Close()
         }
